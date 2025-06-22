@@ -1,9 +1,11 @@
 import { User } from '../models/user.model.js';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt.js';
 import bcrypt from 'bcryptjs';
+import { generateVerificationToken } from '../utils/token.js';
 
 export const registerUser = async ({ fullName, email, username, password }) => {
   try {
+    const { unHashedToken, hashedToken, expiry } = generateVerificationToken();
     const existingUser = await User.findOne({
       $or: [{ email }, { username }],
     });
@@ -12,7 +14,25 @@ export const registerUser = async ({ fullName, email, username, password }) => {
       throw new Error('User with this email or username already exists');
     }
 
-    const user = await User.create({ fullName, email, username, password });
+    const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      fullName
+    )}&background=random`;
+
+    const user = await User.create({
+      fullName,
+      email,
+      username,
+      password,
+      avatar: {
+        url: avatarUrl,
+        localPath: '', // will be used if you support file upload later
+      },
+      emailVerificationToken: hashedToken,
+      emailVerificationExpiry: expiry,
+    });
+
+    // TODO: Send verification email with unHashedToken (e.g., `https://yourdomain.com/verify-email?token=${unHashedToken}`)
+
     return user;
   } catch (error) {
     console.error('Error in registerUser:', error);

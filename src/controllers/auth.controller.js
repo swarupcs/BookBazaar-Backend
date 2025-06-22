@@ -47,6 +47,8 @@ export const register = asyncHandler(async (req, res) => {
             username: user.username,
             fullName: user.fullName,
             role: user.role,
+            avatar: user.avatar,
+            createdAt: user.createdAt,
             isEmailVerified: user.isEmailVerified,
         }
     }, 'User registered successfully').send(res);
@@ -70,22 +72,28 @@ export const login = asyncHandler(async (req, res) => {
 
     setAuthCookies(res, accessToken, refreshToken);
 
-    return new ApiResponse(200, {
+    return new ApiResponse(
+      200,
+      {
         user: {
-            _id: user._id,
-            fullName: user.fullName,
-            email: user.email,
-            username: user.username,
-            role: user.role,
+          _id: user._id,
+          email: user.email,
+          username: user.username,
+          fullName: user.fullName,
+          role: user.role,
+          avatar: user.avatar,
+          createdAt: user.createdAt,
+          isEmailVerified: user.isEmailVerified,
         },
-        token : {
-            accessToken,
-            refreshToken
+        token: {
+          accessToken,
+          refreshToken,
         },
-    }, 'Login successful').send(res);
+      },
+      'Login successful'
+    ).send(res);
 
 })
-
 
 export const getUserDetails = asyncHandler(async (req, res) => {
     const user = req.user;
@@ -102,3 +110,4 @@ export const getUserDetails = asyncHandler(async (req, res) => {
     },
         'User profile fetched successfully').send(res);
 });
+
