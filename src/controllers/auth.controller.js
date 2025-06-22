@@ -6,8 +6,9 @@ import {
 } from '../services/auth.services.js';
 import { ApiError } from '../utils/api-error.js';
 import { ApiResponse } from '../utils/api-response.js';
+import { generateApiKey } from '../utils/apiKey.js';
 import { asyncHandler } from '../utils/async-handler.js';
-import { setAuthCookies } from '../utils/cookies.js';
+import { clearAuthCookies, setAuthCookies } from '../utils/cookies.js';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt.js';
 
 export const register = asyncHandler(async (req, res) => {
@@ -111,3 +112,41 @@ export const getUserDetails = asyncHandler(async (req, res) => {
         'User profile fetched successfully').send(res);
 });
 
+
+export const logout = asyncHandler(async (req, res) => {
+
+    const refreshToken = req.cookies?.refreshToken;
+
+    if(refreshToken) {
+        await User.findOneAndUpdate(
+            { refreshToken },
+            { $unset: { refreshToken: '' } },
+            { new: true },
+        );
+
+        clearAuthCookies(res);
+
+        return new ApiResponse(200, null, "Logged out successfully").send(res);
+    }
+})
+
+
+export const generateUserApiKey = asyncHandler(async (req, res) => {
+    const userId = req.user?._id;
+
+    if(!userId) {
+        throw new ApiError(401, 'Unauthorized: User not found');
+    }
+
+    const apiKey = generateApiKey();
+
+    const user = await User.findByIdAndUpdate(
+        userId,
+        { apiKey },
+        { new: true, select: "_id email username apiKey"}
+    );
+
+    return new ApiResponse(200, {
+        apiKey: user.apiKey,
+    }, "New API key generated successfully").send(res);
+});
