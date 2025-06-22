@@ -6,6 +6,7 @@ import {
 } from '../services/auth.services.js';
 import { ApiError } from '../utils/api-error.js';
 import { ApiResponse } from '../utils/api-response.js';
+import { asyncHandler } from '../utils/async-handler.js';
 import { setAuthCookies } from '../utils/cookies.js';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt.js';
 
@@ -52,39 +53,35 @@ export const register = asyncHandler(async (req, res) => {
 
 });
 
-export const login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
+export const login = asyncHandler(async (req, res) => {
+    const {email, password} = req.body;
 
-    if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: 'Email and password are required' });
+    if(!email || !password) {
+        throw new ApiError(400, 'Email and password are required');
     }
 
     const user = await validateCredentials(email, password);
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+
+    if(!user) {
+        throw new ApiError(401, 'Invalid email or password');
     }
 
     const { accessToken, refreshToken } = await issueTokensForUser(user);
 
-    res
-      .cookie('accessToken', accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 15 * 60 * 1000, // 15 minutes
-      })
-      .cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      })
-      .json({ message: 'Login successfull', data: { user, accessToken } });
-  } catch (error) {
-    console.log('error in login controller:', error);
-    res.status(500).json({ message: 'Login failed', error: error.message });
-  }
-};
+    setAuthCookies(res, accessToken, refreshToken);
+
+    return new ApiResponse(200, {
+        user: {
+            _id: user._id,
+            fullName: user.fullName,
+            email: user.email,
+            username: user.username,
+            role: user.role,
+        },
+        token : {
+            accessToken,
+            refreshToken
+        },
+    }, 'Login successful').send(res);
+
+})
