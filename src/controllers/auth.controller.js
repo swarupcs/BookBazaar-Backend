@@ -4,67 +4,53 @@ import {
   registerUser,
   validateCredentials,
 } from '../services/auth.services.js';
+import { ApiError } from '../utils/api-error.js';
+import { ApiResponse } from '../utils/api-response.js';
+import { setAuthCookies } from '../utils/cookies.js';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt.js';
 
-export const register = async (req, res) => {
-  try {
-    const { fullName, email, username, password } = req.body;
-    if (!fullName || !email || !password || !username) {
-      return res.status(400).json({ message: 'All fields are required' });
+export const register = asyncHandler(async (req, res) => {
+    const {fullName, email, username, password} = req.body;
+
+    if(!fullName || !email || !username || !password) {
+        throw new ApiError(400, 'All fields are required');
     }
 
-    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
-    if (existingUser) {
-      return res
-        .status(400)
-        .json({ message: 'User with this email or username already exists' });
+    const existingUser = await User.findOne({
+        $or: [{email}, {username}],
+    });
+
+    if(existingUser) {
+        throw new ApiError(400, 'User with this email or username already exists');
     }
 
     const user = await registerUser({ fullName, email, username, password });
 
     const accessToken = generateAccessToken({
-      _id: user._id,
-      email: user.email,
-      role: user.role,
-    });
+        _id: user._id,
+        email: user.email,
+        role: user.role,
+    })
 
     const refreshToken = generateRefreshToken({ _id: user._id });
 
     user.refreshToken = refreshToken;
     await user.save();
 
-    res
-      .cookie('accessToken', accessToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'Strict',
-        maxAge: 15 * 60 * 1000,
-      })
-      .cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'Strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      })
-      .status(201)
-      .json({
-        message: 'User registered successfully',
-        user: {
-          _id: user._id,
-          email: user.email,
-          username: user.username,
-          fullName: user.fullName,
-          role: user.role,
-        },
-      });
+    setAuthCookies(res, accessToken, refreshToken);
 
-  } catch (error) {
-    console.log('error in register controller:', error);
-    res
-      .status(500)
-      .json({ message: 'Registration failed', error: error.message });
-  }
-};
+    return new ApiResponse(201, {
+        user: {
+            _id: user._id,
+            email: user.email,
+            username: user.username,
+            fullName: user.fullName,
+            role: user.role,
+            isEmailVerified: user.isEmailVerified,
+        }
+    }, 'User registered successfully').send(res);
+
+});
 
 export const login = async (req, res) => {
   try {
