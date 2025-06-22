@@ -6,12 +6,15 @@
  */
 
 import express from 'express';
-import { login, register } from '../../controllers/auth.controller.js';
+import { getUserDetails, login, register } from '../../controllers/auth.controller.js';
+import { requireAuth } from '../../middlewares/auth.middleware.js';
 
 const authRouter = express.Router();
 
 authRouter.post('/register', register);
 
 authRouter.post('/login', login);
+
+authRouter.get('/me', requireAuth, getUserDetails);
 
 export default authRouter;

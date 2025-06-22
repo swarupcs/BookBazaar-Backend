@@ -85,3 +85,20 @@ export const login = asyncHandler(async (req, res) => {
     }, 'Login successful').send(res);
 
 })
+
+
+export const getUserDetails = asyncHandler(async (req, res) => {
+    const user = req.user;
+
+    return new ApiResponse(200, {
+        user: {
+            _id: user._id,
+            fullName: user.fullName,
+            email: user.email,
+            username: user.username,
+            role: user.role,
+            createdAt: user.createdAt,
+        },
+    },
+        'User profile fetched successfully').send(res);
+});
