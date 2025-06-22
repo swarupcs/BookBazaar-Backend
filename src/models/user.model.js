@@ -50,6 +50,12 @@ const userSchema = new Schema(
       select: false, // Exclude from queries by default
     },
 
+    apiKey: {
+      type: String,
+      default: null,
+      select: false, // Do not return it by default
+    },
+
     isEmailVerified: {
       type: Boolean,
       default: false,
