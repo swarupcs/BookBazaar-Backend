@@ -6,7 +6,7 @@
  */
 
 import express from 'express';
-import { generateUserApiKey, getUserDetails, login, logout, register } from '../../controllers/auth.controller.js';
+import { generateUserApiKey, getUserDetails, login, logout, refreshAccessToken, register } from '../../controllers/auth.controller.js';
 import { requireAuth } from '../../middlewares/auth.middleware.js';
 
 const authRouter = express.Router();
@@ -21,5 +21,7 @@ authRouter.post('/api-key', requireAuth, generateUserApiKey);
 
 // Logs out the user and clears cookies
 authRouter.post('/logout', requireAuth, logout);
+
+authRouter.post('/refresh-token', refreshAccessToken);
 
 export default authRouter;
