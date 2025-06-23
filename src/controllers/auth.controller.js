@@ -1,3 +1,4 @@
+import { REFRESH_TOKEN_SECRET } from '../config/serverConfig.js';
 import { User } from '../models/user.model.js';
 import {
   issueTokensForUser,
@@ -150,3 +151,43 @@ export const generateUserApiKey = asyncHandler(async (req, res) => {
         apiKey: user.apiKey,
     }, "New API key generated successfully").send(res);
 });
+
+export const refreshAccessToken = asyncHandler(async (req, res) => {
+    const refreshTokenFromCookie = req.cookies?.refreshToken;
+
+    if(!refreshTokenFromCookie) {
+        throw new ApiError(401, 'Unauthorized: Refresh token not found');
+    }
+
+    try {
+
+        const decoded = jwt.verify(refreshTokenFromCookie, REFRESH_TOKEN_SECRET);
+
+        const user = await User.findById(decoded._id);
+
+        if(!user || user.refreshToken !== refreshTokenFromCookie) {
+            throw new ApiError(401, 'Unauthorized: Invalid refresh token');
+        }
+
+        const newAccessToken = generateAccessToken({
+            _id: user._id,
+            email: user.email,
+            role: user.role,
+        });
+
+        const newRefreshToken = generateRefreshToken({ _id: user._id });
+
+        user.refreshToken = newRefreshToken;
+        await user.save();
+
+        setAuthCookies(res, newAccessToken, newRefreshToken);
+
+        return new ApiResponse(200, {
+            accessToken: newAccessToken,
+            refreshToken: newRefreshToken,
+        }, "Access token refreshed successfully").send(res);
+        
+    } catch (error) {
+        throw new ApiError(401, 'Unauthorized: Invalid refresh token');
+    }
+})
