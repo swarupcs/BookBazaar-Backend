@@ -191,3 +191,21 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
         throw new ApiError(401, 'Unauthorized: Invalid refresh token');
     }
 })
+
+
+export const checkAdminAccess = asyncHandler(async (req, res) => {
+    if(req?.user?.role !== "admin") {
+        throw new ApiError(403, 'Access denied: Admins only');
+    }
+
+    const userDetails = {
+        _id: req.user._id,
+        email: req.user.email,
+        username: req.user.username,
+        fullName: req.user.fullName,
+        role: req.user.role,
+        createdAt: req.user.createdAt,
+    }
+
+    return new ApiResponse(200, userDetails ,"Access granted: Admin user", "Admin access check successful").send(res);
+})
