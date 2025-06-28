@@ -82,3 +82,18 @@ export const getAllBooks = asyncHandler(async (req, res) => {
     'Books fetched successfully'
   ).send(res);
 });
+
+export const getBookById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const book = await Book.findById(id).populate(
+    'createdBy',
+    'username fullName email'
+  );
+
+  if (!book) {
+    throw new ApiError(404, 'Book not found');
+  }
+
+  return new ApiResponse(200, book, 'Book fetched successfully').send(res);
+});
