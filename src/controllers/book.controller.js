@@ -98,7 +98,6 @@ export const getBookById = asyncHandler(async (req, res) => {
   return new ApiResponse(200, book, 'Book fetched successfully').send(res);
 });
 
-
 export const updateBook = asyncHandler(async (req, res) => {
   const {id} = req.params;
 
@@ -116,3 +115,17 @@ export const updateBook = asyncHandler(async (req, res) => {
   return new ApiResponse(200, book, 'Book updated successfully').send(res);
 
 })
+
+export const deleteBook = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const book = await Book.findById(id);
+
+  if(!book) {
+    throw new ApiError(404, 'Book not found');
+  }
+
+  await book.deleteOne();
+
+  return new ApiResponse(200, book, 'Book deleted successfully').send(res);
+});
