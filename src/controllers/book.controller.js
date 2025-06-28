@@ -97,3 +97,22 @@ export const getBookById = asyncHandler(async (req, res) => {
 
   return new ApiResponse(200, book, 'Book fetched successfully').send(res);
 });
+
+
+export const updateBook = asyncHandler(async (req, res) => {
+  const {id} = req.params;
+
+  const updateFields = req.body;
+
+  const book = await Book.findById(id);
+
+  if(!book) {
+    throw new ApiError(404, 'Book not found');
+  }
+
+  Object.assign(book, updateFields);
+  await book.save();
+
+  return new ApiResponse(200, book, 'Book updated successfully').send(res);
+
+})
