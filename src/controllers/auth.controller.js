@@ -1,4 +1,5 @@
 import { REFRESH_TOKEN_SECRET } from '../config/serverConfig.js';
+import { ApiKey } from '../models/apiKey.model.js';
 import { User } from '../models/user.model.js';
 import {
   issueTokensForUser,
@@ -139,17 +140,24 @@ export const generateUserApiKey = asyncHandler(async (req, res) => {
         throw new ApiError(401, 'Unauthorized: User not found');
     }
 
-    const apiKey = generateApiKey();
+    // check if user already has an active API key
+    const existingKey = await ApiKey.findOne({ user: userId, isActive: true });
+    if(existingKey) {
+        throw new ApiError(400, 'User already has an active API key, Revoke it first before generating a new one');
+    }
 
-    const user = await User.findByIdAndUpdate(
-        userId,
-        { apiKey },
-        { new: true, select: "_id email username apiKey"}
-    );
+    // Generate and save a new API key
+    const key =generateApiKey();
 
-    return new ApiResponse(200, {
-        apiKey: user.apiKey,
-    }, "New API key generated successfully").send(res);
+    const newKey = await ApiKey.create({
+      user: userId,
+      key,
+      isActive: true,
+    });
+
+    return new ApiResponse(201, {
+        apiKey: newKey.key,
+    }, 'API key generated successfully').send(res);
 });
 
 export const refreshAccessToken = asyncHandler(async (req, res) => {
