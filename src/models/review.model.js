@@ -18,11 +18,19 @@ const reviewSchema = new Schema(
       max: 5,
       required: true,
     },
-    review: {
+    comment: {
       type: String,
       required: true,
+    },
+    helpfulVotes: {
+      type: Number,
+      default: 0,
     },
   },
   { timestamps: true }
 );
+
+// Ensure that a user can only review a book once
+reviewSchema.index({ user: 1, book: 1 }, { unique: true });
+
 export const Review = mongoose.model('Review', reviewSchema);
