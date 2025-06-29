@@ -1,7 +1,7 @@
 import { Book } from '../models/book.model.js';
-import { Review } from '../models/review.model';
+import { Review } from '../models/review.model.js';
 import { ApiError } from '../utils/api-error.js';
-import { ApiResponse } from '../utils/api-response';
+import { ApiResponse } from '../utils/api-response.js';
 import { asyncHandler } from '../utils/async-handler.js';
 
 export const addReviewToBook = asyncHandler(async (req, res) => {
@@ -30,7 +30,7 @@ export const addReviewToBook = asyncHandler(async (req, res) => {
     user: req.user._id,
     book: bookId,
     rating,
-    review,
+    comment: review,
   });
 
   // Update book stats
